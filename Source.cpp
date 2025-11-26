@@ -42,6 +42,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -101,11 +102,23 @@ int main()
         
         //transformation
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.25f, 0.0f, 0.0f));
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 proj = glm::mat4(1.0f);
+
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 5.0f));
+        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
+        
+        //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
+        proj = glm::perspective(glm::radians(60.0f), 
+            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
         ourShader.SetMat4("model", model);
-        ourShader.setFloat("uTime", glfwGetTime());
+        ourShader.SetMat4("view", view);
+        ourShader.SetMat4("proj", view);
+        //ourShader.setFloat("uTime", glfwGetTime());
 
 
         // render the triangle
