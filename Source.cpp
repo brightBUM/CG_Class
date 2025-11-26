@@ -8,8 +8,11 @@
 
 #include <iostream>
 
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+
+void FPSCounter(GLFWwindow* window);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -89,6 +92,7 @@ int main()
         // input
         // -----
         processInput(window);
+        FPSCounter(window);
 
         // render
         // ------
@@ -97,11 +101,12 @@ int main()
         
         //transformation
         glm::mat4 model = glm::mat4(1.0f);
-        //model = glm::translate(model, glm::vec3(1.0f, 0.0f, 0.0f));
-        //model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::translate(model, glm::vec3(0.25f, 0.0f, 0.0f));
+        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
         ourShader.SetMat4("model", model);
-        
+        ourShader.setFloat("uTime", glfwGetTime());
+
 
         // render the triangle
         ourShader.use();
@@ -123,6 +128,25 @@ int main()
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+void FPSCounter(GLFWwindow* window)
+{
+    static double lastTime = glfwGetTime();
+    static int frames = 0;
+
+    double currentTime = glfwGetTime();
+    frames++;
+
+    if (currentTime - lastTime >= 1.0) {
+        double fps = frames / (currentTime - lastTime);
+
+        std::string title = "LearnOpenGL | FPS: " + std::to_string((int)fps);
+        glfwSetWindowTitle(window, title.c_str());
+
+        frames = 0;
+        lastTime = currentTime;
+    }
 }
 
 
