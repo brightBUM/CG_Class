@@ -14,13 +14,15 @@ void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
 
+void LoadTexture(unsigned int& texture, const char* path);
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 //global variables
 float modelZ = -1.0f;
-
+float mixValue = 0.5f;
 int main()
 {
     // glfw: initialize and configure
@@ -65,7 +67,7 @@ int main()
         // positions         // colors         //Tex Coords            
         -0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f,1.0f, // top left - 0
          0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,1.0f,  // top right - 1
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,0.0f  // bottom right - 2
+         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,0.0f,  // bottom right - 2
         -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f,0.0f  // bottom left -3
     };
 
@@ -101,36 +103,18 @@ int main()
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    stbi_set_flip_vertically_on_load(true);
-    // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load and generate the texture
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load("Textures/punchCat.jpg", &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    
-
-    stbi_image_free(data);
+    unsigned int texture1;
+    unsigned int texture2;
+    LoadTexture(texture1, "Textures/punchCat.jpg");
+    LoadTexture(texture2, "Textures/beardCat.jpg");
 
     ourShader.use();
-    ourShader.setInt("texture", 0);
+    ourShader.setInt("texSampler1", 0);
+    ourShader.use();
+    ourShader.setInt("texSampler2", 1);
 
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -163,12 +147,17 @@ int main()
         ourShader.SetMat4("model", model);
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
-        //ourShader.setFloat("uTime", glfwGetTime());
+        ourShader.setFloat("mixValue", mixValue);
 
 
         // render the triangle
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+
         ourShader.use();
-        glBindTexture(GL_TEXTURE, texture);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         //glBindVertexArray(0);
@@ -188,6 +177,32 @@ int main()
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
+}
+
+void LoadTexture(unsigned int& texture,const char* path)
+{
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    stbi_set_flip_vertically_on_load(true);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture : "<<path << std::endl;
+    }
+
+    stbi_image_free(data);
 }
 
 void FPSCounter(GLFWwindow* window)
@@ -216,10 +231,10 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        modelZ -= 0.1f;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        modelZ += 0.1f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && mixValue > 0)
+        mixValue -= 0.05f;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && mixValue < 1)
+        mixValue += 0.05f;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
