@@ -63,6 +63,8 @@ int main()
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
+    
+    //triangle - pos,col,uv
     float vertices[] = {
         // positions         // colors         //Tex Coords            
         -0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f,1.0f, // top left - 0
@@ -70,11 +72,11 @@ int main()
          0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,0.0f,  // bottom right - 2
         -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f,0.0f  // bottom left -3
     };
-
     unsigned int indices[] = {  // note that we start from 0!
     0, 1, 3,   // first triangle
     1, 2, 3    // second triangle
     };
+    //cube - pos , col
     float cubeVertices[] = {
         // position           // color
         -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,   // 0
@@ -113,6 +115,67 @@ int main()
         1, 0, 4
     };
 
+    //cube - pos,uv
+    float cubeVertices2[] = {
+        // ===== FRONT FACE =====
+        //    position           uv
+        -0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
+
+        // ===== BACK FACE =====
+        -0.5f, -0.5f, -0.5f,     1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,     0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,     0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,     1.0f, 1.0f,
+
+        // ===== LEFT FACE =====
+        -0.5f, -0.5f, -0.5f,     0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,     0.0f, 1.0f,
+
+        // ===== RIGHT FACE =====
+         0.5f, -0.5f, -0.5f,     1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,     1.0f, 1.0f,
+
+         // ===== TOP FACE =====
+         -0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
+          0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
+          0.5f,  0.5f, -0.5f,     1.0f, 0.0f,
+         -0.5f,  0.5f, -0.5f,     0.0f, 0.0f,
+
+         // ===== BOTTOM FACE =====
+         -0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
+          0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
+          0.5f, -0.5f, -0.5f,     1.0f, 1.0f,
+         -0.5f, -0.5f, -0.5f,     0.0f, 1.0f
+    };
+
+    unsigned int cubeIndices2[] = {
+        // FRONT
+        0, 1, 2,  2, 3, 0,
+
+        // BACK
+        4, 5, 6,  6, 7, 4,
+
+        // LEFT
+        8, 9, 10, 10, 11, 8,
+
+        // RIGHT
+        12, 13, 14, 14, 15, 12,
+
+        // TOP
+        16, 17, 18, 18, 19, 16,
+
+        // BOTTOM
+        20, 21, 22, 22, 23, 20
+    };
+
+
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -121,26 +184,26 @@ int main()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     // TexCoord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    /*glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);*/
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
 
-    unsigned int texture1;
+    /*unsigned int texture1;
     unsigned int texture2;
     LoadTexture(texture1, "Textures/punchCat.jpg");
     LoadTexture(texture2, "Textures/beardCat.jpg");
@@ -148,11 +211,12 @@ int main()
     ourShader.use();
     ourShader.setInt("texSampler1", 0);
     ourShader.use();
-    ourShader.setInt("texSampler2", 1);
+    ourShader.setInt("texSampler2", 1);*/
 
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    // render loop
+    glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
+    // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
     {
@@ -164,7 +228,7 @@ int main()
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
         
         //transformation
         glm::mat4 model = glm::mat4(1.0f);
@@ -172,7 +236,8 @@ int main()
         glm::mat4 proj = glm::mat4(1.0f);
 
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, modelZ));
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
 
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -189,14 +254,15 @@ int main()
 
         // render the triangle
         
-        glActiveTexture(GL_TEXTURE0);
+        /*glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBindTexture(GL_TEXTURE_2D, texture2);*/
 
         ourShader.use();
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // 6 faces * 2 triangles * 3 vertices = 36
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         //glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
