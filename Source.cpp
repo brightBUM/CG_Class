@@ -10,6 +10,8 @@
 #include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
 void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
@@ -21,6 +23,14 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 //global variables
+double deltaTime = 0.0;
+double lastFrame = 0.0;
+
+double fps = 0.0;
+double fpsTimer = 0.0;
+double fpsUpdateInterval = 0.5; // half a second
+int frames = 0;
+
 float modelZ = -1.0f;
 float mixValue = 0.5f;
 int main()
@@ -47,6 +57,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(window, MouseButtonCallback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -204,8 +215,8 @@ int main()
 
     unsigned int texture1;
     unsigned int texture2;
-    LoadTexture(texture1, "Textures/punchCat.jpg");
-    LoadTexture(texture2, "Textures/beardCat.jpg");
+    LoadTexture(texture1, "Textures/cat_open.png");
+    LoadTexture(texture2, "Textures/cat_close.png");
 
     ourShader.use();
     ourShader.setInt("texSampler1", 0);
@@ -235,8 +246,8 @@ int main()
         glm::mat4 proj = glm::mat4(1.0f);
 
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, modelZ));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 1.0f, 0.0f));
+        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
 
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -309,20 +320,26 @@ void LoadTexture(unsigned int& texture,const char* path)
 
 void FPSCounter(GLFWwindow* window)
 {
-    static double lastTime = glfwGetTime();
-    static int frames = 0;
+    // --- DELTA TIME ---
+    double currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
 
-    double currentTime = glfwGetTime();
+    // --- FPS COUNTER ---
     frames++;
+    fpsTimer += deltaTime;
 
-    if (currentTime - lastTime >= 1.0) {
-        double fps = frames / (currentTime - lastTime);
-
-        std::string title = "LearnOpenGL | FPS: " + std::to_string((int)fps);
-        glfwSetWindowTitle(window, title.c_str());
-
+    if (fpsTimer >= fpsUpdateInterval)   // update every 0.5s
+    {
+        fps = frames / fpsTimer;         // true FPS
         frames = 0;
-        lastTime = currentTime;
+        fpsTimer = 0.0;
+
+        std::string title =
+            "CG_Class | FPS: " + std::to_string((int)fps) +
+            " | delta: " + std::to_string(deltaTime);
+
+        glfwSetWindowTitle(window, title.c_str());
     }
 }
 
@@ -346,4 +363,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        mixValue = 1.0f;
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+        mixValue = 0.0f;
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+        std::cout << "Right mouse pressed\n";
 }
