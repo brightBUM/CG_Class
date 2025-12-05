@@ -5,13 +5,14 @@
 #include <GLM/gtc/type_ptr.hpp>
 #include "Shader.h"
 #include <iostream>
-
+#include "Camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-
+void MousePosCallback(GLFWwindow* window, double,double);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
@@ -31,8 +32,17 @@ double fpsTimer = 0.0;
 double fpsUpdateInterval = 0.5; // half a second
 int frames = 0;
 
-float modelZ = -1.0f;
-float mixValue = 0.5f;
+Camera camera(glm::vec3(1.5f, 1.5f, 4.5f));
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
+float mixGrid[4][4];
+double flipTimer[4][4];
+
+//glm::vec3 camPos = glm::vec3(0.0f,0.0f,-1.5f);
+//float cameraSpeed = 0.5f;
+float mixValue = 0.0f;
 int main()
 {
     // glfw: initialize and configure
@@ -58,6 +68,8 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
+    glfwSetCursorPosCallback(window, MousePosCallback);
+    glfwSetScrollCallback(window, scroll_callback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -229,6 +241,14 @@ int main()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            mixGrid[i][j] = 0.0f;
+            flipTimer[i][j] = glfwGetTime() + (i + j) * 0.2; // delay pattern
+        }
+    }
+
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -248,15 +268,14 @@ int main()
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 proj = glm::mat4(1.0f);
 
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, modelZ));
         //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
 
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
+        view = camera.GetViewMatrix();
         
         //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
-        proj = glm::perspective(glm::radians(60.0f), 
+        proj = glm::perspective(glm::radians(camera.Zoom), 
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         ourShader.SetMat4("model", model);
@@ -275,7 +294,30 @@ int main()
         ourShader.use();
         glBindVertexArray(VAO);
         // 6 faces * 2 triangles * 3 vertices = 36
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        double now = glfwGetTime();
+
+        for (int i = 0.0f; i < 4; i+=1)
+        {
+            for (int j = 0.0f; j < 4; j +=1)
+            {
+                // update mix independently
+                if (now > flipTimer[i][j]) {
+                    mixGrid[i][j] = 1.0f - mixGrid[i][j];   // flip
+                    flipTimer[i][j] = now + 0.5f;           // next flip after 1 sec
+                }
+
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(i, j, 0.0f));
+                model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+                ourShader.SetMat4("model", model);
+                ourShader.setFloat("mixValue", mixGrid[i][j]);
+
+                glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            }
+            
+        }
+
         //glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -353,10 +395,20 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && mixValue > 0)
-        mixValue -= 0.05f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && mixValue < 1)
-        mixValue += 0.05f;
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime);
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -367,6 +419,33 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
     std::cout << "size : " << width << " , " << height << std::endl;
+}
+void MousePosCallback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+
+    //std::cout << "cam pos : " << camera.Position.x << " , " << camera.Position.y << " , " << camera.Position.z << std::endl;;
+
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
