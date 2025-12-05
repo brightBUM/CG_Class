@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <GLM/glm.hpp>
 #include <GLM/gtc/matrix_transform.hpp>
@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include <iostream>
 #include "Camera.h"
+#include "AudioSystem.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -22,56 +23,7 @@ void processInput(GLFWwindow* window);
 void FPSCounter(GLFWwindow* window);
 
 void LoadTexture(unsigned int& texture, const char* path);
-bool LoadWav(const char* filename, ALuint* buffer)
-{
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) return false;
 
-    char riff[4];
-    file.read(riff, 4);
-
-    file.ignore(4); // file size
-
-    char wave[4];
-    file.read(wave, 4);
-
-    char fmt[4];
-    file.read(fmt, 4);
-
-    uint32_t fmtSize;
-    file.read((char*)&fmtSize, 4);
-
-    uint16_t audioFormat, channels;
-    uint32_t sampleRate, byteRate;
-    uint16_t blockAlign, bitsPerSample;
-
-    file.read((char*)&audioFormat, 2);
-    file.read((char*)&channels, 2);
-    file.read((char*)&sampleRate, 4);
-    file.read((char*)&byteRate, 4);
-    file.read((char*)&blockAlign, 2);
-    file.read((char*)&bitsPerSample, 2);
-
-    char dataHeader[4];
-    file.read(dataHeader, 4);
-
-    uint32_t dataSize;
-    file.read((char*)&dataSize, 4);
-
-    std::vector<char> data(dataSize);
-    file.read(data.data(), dataSize);
-
-    ALenum format = 0;
-    if (channels == 1 && bitsPerSample == 8) format = AL_FORMAT_MONO8;
-    if (channels == 1 && bitsPerSample == 16) format = AL_FORMAT_MONO16;
-    if (channels == 2 && bitsPerSample == 8) format = AL_FORMAT_STEREO8;
-    if (channels == 2 && bitsPerSample == 16) format = AL_FORMAT_STEREO16;
-
-    alGenBuffers(1, buffer);
-    alBufferData(*buffer, format, data.data(), dataSize, sampleRate);
-
-    return true;
-}
 // settings
 const unsigned int SCR_WIDTH = 1500;
 const unsigned int SCR_HEIGHT = 800;
@@ -90,24 +42,29 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
-float mixGrid[4][4];
-double flipTimer[4][4];
+AudioSystem audioSystem;
+
+struct Tile
+{
+    float mix = 0.0f;       // 0 → 1
+    double startTime = -1;  // when this tile starts flipping
+    bool finished = false;  // audio should play once
+    float mixValue = 0.0f;
+};
+
+const int row = 5;
+const int column = 5;
+Tile tiles[row][column];
+bool flipTriggered = false;
+double flipStartTime = 0.0;
 ALuint buffer, source;
 
 //glm::vec3 camPos = glm::vec3(0.0f,0.0f,-1.5f);
 //float cameraSpeed = 0.5f;
 float mixValue = 0.0f;
+
 int main()
 {
-    ALCdevice* device = alcOpenDevice(NULL); // default device
-    if (!device) {
-        std::cout << "Failed to open OpenAL device\n";
-    }
-
-    ALCcontext* context = alcCreateContext(device, NULL);
-    alcMakeContextCurrent(context);
-
-
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -305,15 +262,8 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            mixGrid[i][j] = 0.0f;
-            flipTimer[i][j] = glfwGetTime() + (i + j) * 0.2; // delay pattern
-        }
-    }
-
-
-    LoadWav("Audio/pop2.wav", &buffer);   // load file into OpenAL buffer
+    audioSystem.Init();
+    audioSystem.LoadSound("popSound", "Audio/pop2.wav");
 
     alGenSources(1, &source);
     alSourcei(source, AL_BUFFER, buffer);
@@ -353,7 +303,7 @@ int main()
         ourShader.SetMat4("model", model);
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
-        ourShader.setFloat("mixValue", mixValue);
+        //ourShader.setFloat("mixValue", mixValue);
 
 
         // render the triangle
@@ -368,24 +318,45 @@ int main()
         // 6 faces * 2 triangles * 3 vertices = 36
 
         double now = glfwGetTime();
+        float flipSpeed = 1.5f;      // how fast each tile flips
+        float tileDelay = 0.1f;     // delay between tiles
 
-        for (int i = 0.0f; i < 4; i+=1)
+        for (int i = 0.0f; i < row; i+=1)
         {
-            for (int j = 0.0f; j < 4; j +=1)
+            for (int j = 0.0f; j < column; j +=1)
             {
-                // update mix independently
-                if (now > flipTimer[i][j]) {
-                    mixGrid[i][j] = 1.0f - mixGrid[i][j];   // flip
-                    flipTimer[i][j] = now + 3.0f;           // next flip after 1 sec
-                    alSourcePlay(source);
+                Tile& t = tiles[i][j];
 
+                // If flip is triggered, assign start time based on grid index
+                if (flipTriggered && t.startTime < 0)
+                {
+                    t.startTime = flipStartTime + (i * 4 + j) * tileDelay;
                 }
+
+                // If it's time for this tile to animate
+                if (now >= t.startTime && t.mix < 1.0f)
+                {
+                    t.mix += deltaTime * flipSpeed; // progress animation
+                    if (t.mix >= 1.0f)
+                    {
+                        t.mix = 1.0f;
+
+                        if (!t.finished)
+                        {
+                            // play sound here
+                            audioSystem.PlaySound("popSound");
+                            t.finished = true;
+                            t.mixValue = 1.0f;
+                        }
+                    }
+                }
+
 
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(i, j, 0.0f));
                 model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
                 ourShader.SetMat4("model", model);
-                ourShader.setFloat("mixValue", mixGrid[i][j]);
+                ourShader.setFloat("mixValue", t.mixValue);
 
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
             }
@@ -525,7 +496,21 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        mixValue = 1.0f;
+        flipTriggered = true;
+        flipStartTime = glfwGetTime();
+
+        // Reset all tiles
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < column; j++)
+            {
+                tiles[i][j].mix = 0.0f;
+                tiles[i][j].startTime = -1;
+                tiles[i][j].finished = false;
+                tiles[i][j].mixValue = 0.0f;
+
+            }
+        }
 
     }
 
