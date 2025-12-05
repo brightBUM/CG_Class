@@ -46,10 +46,10 @@ AudioSystem audioSystem;
 
 struct Tile
 {
-    float mix = 0.0f;       // 0 → 1
-    double startTime = -1;  // when this tile starts flipping
-    bool finished = false;  // audio should play once
-    float mixValue = 0.0f;
+    float mix = 0.0f;       
+    float delay = 0.0f;  // when this tile starts flipping
+    bool triggered = false;  // audio should play once
+    float mixValue = 0.0f;// 0 → 1
 };
 
 const int row = 5;
@@ -327,28 +327,26 @@ int main()
             {
                 Tile& t = tiles[i][j];
 
-                // If flip is triggered, assign start time based on grid index
-                if (flipTriggered && t.startTime < 0)
+                if (!t.triggered)
+                    continue;
+
+                // reduce delay
+                if (t.delay > 0.0f)
                 {
-                    t.startTime = flipStartTime + (i * 4 + j) * tileDelay;
+                    t.delay -= deltaTime;
+                    continue;
                 }
 
-                // If it's time for this tile to animate
-                if (now >= t.startTime && t.mix < 1.0f)
-                {
-                    t.mix += deltaTime * flipSpeed; // progress animation
-                    if (t.mix >= 1.0f)
-                    {
-                        t.mix = 1.0f;
+                // animate mixValue over time
+                t.mixValue -= deltaTime * 2.0f;   // speed of flip
 
-                        if (!t.finished)
-                        {
-                            // play sound here
-                            audioSystem.PlaySound("popSound");
-                            t.finished = true;
-                            t.mixValue = 1.0f;
-                        }
-                    }
+                if (t.mixValue <= 0.0f)
+                {
+                    t.mixValue = 0.0f;
+                    t.triggered = false;
+                    t.mix = 1.0f;
+                    // play OpenAL sound HERE
+                    audioSystem.PlaySound("popSound");
                 }
 
 
@@ -356,7 +354,7 @@ int main()
                 model = glm::translate(model, glm::vec3(i, j, 0.0f));
                 model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
                 ourShader.SetMat4("model", model);
-                ourShader.setFloat("mixValue", t.mixValue);
+                ourShader.setFloat("mixValue", t.mix);
 
                 glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
             }
@@ -496,19 +494,17 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-        flipTriggered = true;
-        flipStartTime = glfwGetTime();
+        float baseDelay = 0.1f; // spacing between diagonals
 
-        // Reset all tiles
-        for (int i = 0; i < row; i++)
+        for (int x = 0; x < row; x++)
         {
-            for (int j = 0; j < column; j++)
+            for (int y = 0; y < column; y++)
             {
-                tiles[i][j].mix = 0.0f;
-                tiles[i][j].startTime = -1;
-                tiles[i][j].finished = false;
-                tiles[i][j].mixValue = 0.0f;
-
+                tiles[x][y].mixValue = 1.0f;
+                tiles[x][y].delay = (x + y) * baseDelay;  // DIAGONAL WAVE
+                tiles[x][y].triggered = true;
+                tiles[x][y].mix = 0.0f;
+                
             }
         }
 
