@@ -327,26 +327,27 @@ int main()
             {
                 Tile& t = tiles[i][j];
 
-                if (!t.triggered)
-                    continue;
-
-                // reduce delay
-                if (t.delay > 0.0f)
+                if (t.triggered)
                 {
-                    t.delay -= deltaTime;
-                    continue;
-                }
+                    if (t.delay > 0.0f)
+                    {
+                        t.delay -= deltaTime;
+                    }
+                    else
+                    {
+                        // animate flip
+                        t.mixValue -= deltaTime * 2.0f;
 
-                // animate mixValue over time
-                t.mixValue -= deltaTime * 2.0f;   // speed of flip
+                        if (t.mixValue <= 0.0f)
+                        {
+                            t.mixValue = 0.0f;
 
-                if (t.mixValue <= 0.0f)
-                {
-                    t.mixValue = 0.0f;
-                    t.triggered = false;
-                    t.mix = 1.0f;
-                    // play OpenAL sound HERE
-                    audioSystem.PlaySound("popSound");
+                            audioSystem.PlaySound("popSound");
+
+                            t.mix = 1.0f;
+                            t.triggered = false;     // stop animating, but DO NOT stop drawing
+                        }
+                    }
                 }
 
 
