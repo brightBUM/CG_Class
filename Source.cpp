@@ -19,8 +19,8 @@ void FPSCounter(GLFWwindow* window);
 void LoadTexture(unsigned int& texture, const char* path);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1500;
+const unsigned int SCR_HEIGHT = 800;
 
 //global variables
 double deltaTime = 0.0;
@@ -226,6 +226,9 @@ int main()
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -363,6 +366,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+    std::cout << "size : " << width << " , " << height << std::endl;
 }
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
