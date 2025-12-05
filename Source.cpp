@@ -19,8 +19,8 @@ void FPSCounter(GLFWwindow* window);
 void LoadTexture(unsigned int& texture, const char* path);
 
 // settings
-const unsigned int SCR_WIDTH = 1500;
-const unsigned int SCR_HEIGHT = 800;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 //global variables
 double deltaTime = 0.0;
@@ -31,8 +31,9 @@ double fpsTimer = 0.0;
 double fpsUpdateInterval = 0.5; // half a second
 int frames = 0;
 
-float modelZ = -1.0f;
-float mixValue = 0.5f;
+glm::vec3 camPos = glm::vec3(0.0f,0.0f,-1.5f);
+float cameraSpeed = 0.5f;
+float mixValue = 0.0f;
 int main()
 {
     // glfw: initialize and configure
@@ -227,7 +228,7 @@ int main()
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
 
-    glEnable(GL_BLEND);
+    glEnable(GL_BLEND); //enable Blend
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // render loop 
     // -----------
@@ -244,22 +245,20 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
         
         //transformation
-        glm::mat4 model = glm::mat4(1.0f);
+        
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 proj = glm::mat4(1.0f);
 
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, modelZ));
         //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, 0.0f));
+        view = glm::translate(view, camPos);
         
         //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
         proj = glm::perspective(glm::radians(60.0f), 
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        ourShader.SetMat4("model", model);
+        
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
         ourShader.setFloat("mixValue", mixValue);
@@ -275,7 +274,17 @@ int main()
         ourShader.use();
         glBindVertexArray(VAO);
         // 6 faces * 2 triangles * 3 vertices = 36
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        for (float i = 0.0f; i <= 3.0f; i+=1.0f)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(i,0.0f,0.0f));
+            model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+            ourShader.SetMat4("model", model);
+
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        }
+
         //glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -353,12 +362,15 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && mixValue > 0)
-        mixValue -= 0.05f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && mixValue < 1)
-        mixValue += 0.05f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS )
+        camPos.z -= cameraSpeed*deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
+        camPos.z += cameraSpeed *deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camPos.x += cameraSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camPos.x -= cameraSpeed * deltaTime;
 }
-
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
