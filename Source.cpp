@@ -5,12 +5,14 @@
 #include <GLM/gtc/type_ptr.hpp>
 #include "Shader.h"
 #include <iostream>
+#include"Camera.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+void MousePosCallback(GLFWwindow* window, double xPos, double yPos);
 
 void processInput(GLFWwindow* window);
 
@@ -33,7 +35,13 @@ int frames = 0;
 
 glm::vec3 camPos = glm::vec3(0.0f,0.0f,-1.5f);
 float cameraSpeed = 0.5f;
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
+
 float mixValue = 0.0f;
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 int main()
 {
     // glfw: initialize and configure
@@ -59,6 +67,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
+    glfwSetCursorPosCallback(window, MousePosCallback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -262,7 +271,7 @@ int main()
         glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
         //look at - pos,target direction and up vector
-        view = glm::lookAt(camPos, direction, camUp);
+        view = camera.GetViewMatrix();
         
 
         //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
@@ -373,14 +382,21 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS )
-        camPos.z -= cameraSpeed*deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
-        camPos.z += cameraSpeed *deltaTime;
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camPos.x += cameraSpeed * deltaTime;
+        camera.ProcessKeyboard(LEFT, deltaTime);
+
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camPos.x -= cameraSpeed * deltaTime;
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime);
+
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
@@ -401,4 +417,23 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
         std::cout << "Right mouse pressed\n";
+}
+void MousePosCallback(GLFWwindow* window, double xPos, double yPos)
+{
+    float xpos = static_cast<float>(xPos);
+    float ypos = static_cast<float>(yPos);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
