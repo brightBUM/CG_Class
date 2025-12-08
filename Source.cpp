@@ -13,6 +13,7 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void MousePosCallback(GLFWwindow* window, double xPos, double yPos);
+void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos);
 
 void processInput(GLFWwindow* window);
 
@@ -68,6 +69,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, MousePosCallback);
+    glfwSetScrollCallback(window, MouseScrollCallback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -275,7 +277,7 @@ int main()
         
 
         //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
-        proj = glm::perspective(glm::radians(60.0f), 
+        proj = glm::perspective(glm::radians(camera.Zoom), 
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         
@@ -436,4 +438,10 @@ void MousePosCallback(GLFWwindow* window, double xPos, double yPos)
     lastX = xpos;
     lastY = ypos;
     camera.ProcessMouseMovement(xoffset, yoffset);
+}
+void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos)
+{
+    std::cout << "xScroll : " << xPos << " ,yPos : " << yPos << std::endl;
+    camera.ProcessMouseScroll(static_cast<float>(yPos));
+    std::cout << "zoom : " << camera.Zoom << std::endl;
 }
