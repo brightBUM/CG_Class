@@ -230,6 +230,7 @@ int main()
 
     glEnable(GL_BLEND); //enable Blend
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -253,7 +254,17 @@ int main()
         //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
         view = glm::translate(view, camPos);
+
+        //camera rotation
+        glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 3.0f);
+        glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 direction = glm::vec3(5.0f, 0.0f, 0.0f) - camPos;
+        glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        //look at - pos,target direction and up vector
+        view = glm::lookAt(camPos, direction, camUp);
         
+
         //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
         proj = glm::perspective(glm::radians(60.0f), 
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
