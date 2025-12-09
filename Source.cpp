@@ -44,7 +44,7 @@ bool firstMouse = true;
 float mixValue = 0.0f;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-glm::vec3 lightColor = glm::vec3(1.0f, 0.5f, 0.0f);
+glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 glm::vec3 lightPos = glm::vec3(0.0f, 0.25f, 1.0f);
 
 int main()
@@ -323,7 +323,7 @@ int main()
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(i,0.0f,0.0f));
-            model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+            model = glm::scale(model, glm::vec3(0.5-(0.1f*i),0.5f,0.5f));
             ourShader.use();
             ourShader.SetMat4("model", model);
 
@@ -436,9 +436,9 @@ void processInput(GLFWwindow* window)
     //light input
 
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        lightPos += glm::vec3(0.0f,-1.0f,0.0f)*camera.MovementSpeed * (float)deltaTime;
+        lightPos += glm::vec3(0.0f,0.0f,1.0f)*camera.MovementSpeed * (float)deltaTime;
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        lightPos += glm::vec3(0.0f, 1.0f, 0.0f) * camera.MovementSpeed * (float)deltaTime;
+        lightPos += glm::vec3(0.0f, 0.0f, -1.0f) * camera.MovementSpeed * (float)deltaTime;
 
 
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
