@@ -140,42 +140,42 @@ int main()
 
     //cube - pos,uv
     float cubeVertices2[] = {
-        // ===== FRONT FACE =====
-        //    position           uv
-        -0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
+        // ===== FRONT FACE (normal: 0, 0, 1) =====
+    //    position              normal           uv
+    -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
 
-        // ===== BACK FACE =====
-        -0.5f, -0.5f, -0.5f,     1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,     0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,     0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,     1.0f, 1.0f,
+    // ===== BACK FACE (normal: 0, 0, -1) =====
+    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
 
-        // ===== LEFT FACE =====
-        -0.5f, -0.5f, -0.5f,     0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,     0.0f, 1.0f,
+    // ===== LEFT FACE (normal: -1, 0, 0) =====
+    -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
 
-        // ===== RIGHT FACE =====
-         0.5f, -0.5f, -0.5f,     1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,     1.0f, 1.0f,
+    // ===== RIGHT FACE (normal: 1, 0, 0) =====
+     0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
 
-         // ===== TOP FACE =====
-         -0.5f,  0.5f,  0.5f,     0.0f, 1.0f,
-          0.5f,  0.5f,  0.5f,     1.0f, 1.0f,
-          0.5f,  0.5f, -0.5f,     1.0f, 0.0f,
-         -0.5f,  0.5f, -0.5f,     0.0f, 0.0f,
+     // ===== TOP FACE (normal: 0, 1, 0) =====
+     -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+      0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+      0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+     -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
 
-         // ===== BOTTOM FACE =====
-         -0.5f, -0.5f,  0.5f,     0.0f, 0.0f,
-          0.5f, -0.5f,  0.5f,     1.0f, 0.0f,
-          0.5f, -0.5f, -0.5f,     1.0f, 1.0f,
-         -0.5f, -0.5f, -0.5f,     0.0f, 1.0f
+     // ===== BOTTOM FACE (normal: 0, -1, 0) =====
+     -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
+      0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
+      0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
+     -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f
     };
     unsigned int cubeIndices2[] = {
         // FRONT
@@ -211,14 +211,14 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices2), cubeIndices2, GL_STATIC_DRAW);
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // color attribute
-    /*glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);*/
-    // TexCoord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    // TexCoord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
