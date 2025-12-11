@@ -11,10 +11,12 @@ uniform mat4 proj;
 //out vec3 Color;
 out vec2 TexCoord;
 out vec3 Normal;
+out vec3 FragPos;
 void main()
 {
 //    Color = aCol;
     TexCoord = aTexCoord;
     Normal = aNormal;
+    FragPos = vec3(model * vec4(aPos, 1.0));
     gl_Position = proj*view*model*vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }

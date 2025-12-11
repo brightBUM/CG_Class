@@ -43,6 +43,7 @@ bool firstMouse = true;
 
 float mixValue = 0.0f;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 2.0f);
 int main()
 {
     // glfw: initialize and configure
@@ -232,7 +233,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
 
@@ -267,7 +268,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
         
-        glm::vec3 lightColor = glm::vec3(1.0f, glm::sin(glfwGetTime()), 0.5f);
+        glm::vec3 lightColor = glm::vec3(1.0f);
         //transformation
         
         glm::mat4 view = glm::mat4(1.0f);
@@ -297,6 +298,7 @@ int main()
         ourShader.SetMat4("proj", proj);
         ourShader.setFloat("mixValue", mixValue);
         ourShader.SetVec3("lightColor", lightColor);
+        ourShader.SetVec3("lightPos", lightPos);
 
 
         // render the triangle
@@ -322,7 +324,7 @@ int main()
 
         //drawing light source
         glm::mat4 lightModel = glm::mat4(1.0f);
-        lightModel = glm::translate(lightModel, glm::vec3(0.0f, 0.0f, 2.0f));
+        lightModel = glm::translate(lightModel, lightPos);
         lightModel = glm::scale(lightModel, glm::vec3(0.1f));
 
 
@@ -425,6 +427,12 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(DOWN, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         camera.ProcessKeyboard(UP, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        lightPos += glm::vec3(-1.0f, 0.0f, 0.0f) * camera.MovementSpeed * static_cast<float>(deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        lightPos += glm::vec3(1.0f, 0.0f, 0.0f) * camera.MovementSpeed * static_cast<float>(deltaTime);
 
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
