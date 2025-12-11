@@ -267,6 +267,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
         
+        glm::vec3 lightColor = glm::vec3(1.0f, glm::sin(glfwGetTime()), 0.5f);
         //transformation
         
         glm::mat4 view = glm::mat4(1.0f);
@@ -295,6 +296,7 @@ int main()
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
         ourShader.setFloat("mixValue", mixValue);
+        ourShader.SetVec3("lightColor", lightColor);
 
 
         // render the triangle
@@ -321,12 +323,14 @@ int main()
         //drawing light source
         glm::mat4 lightModel = glm::mat4(1.0f);
         lightModel = glm::translate(lightModel, glm::vec3(0.0f, 0.0f, 2.0f));
+        lightModel = glm::scale(lightModel, glm::vec3(0.1f));
 
 
         lightShader.use();
         lightShader.SetMat4("model", lightModel);
         lightShader.SetMat4("view", view);
         lightShader.SetMat4("proj", proj);
+        lightShader.SetVec3("lightColor", lightColor);
 
         glBindVertexArray(lightVAO);
         glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
