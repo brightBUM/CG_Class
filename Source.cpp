@@ -83,7 +83,7 @@ int main()
     // build and compile our shader program
     // ------------------------------------
     Shader ourShader("Shaders/default.vert", "Shaders/default.frag"); // you can name your shader files however you like
-
+    Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     
@@ -225,6 +225,17 @@ int main()
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0);
 
+    //create a light source //another cube
+    unsigned int lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+
     unsigned int texture1;
     unsigned int texture2;
     LoadTexture(texture1, "Textures/cat_open.png");
@@ -280,7 +291,7 @@ int main()
         proj = glm::perspective(glm::radians(camera.Zoom), 
             (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        
+        ourShader.use();
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
         ourShader.setFloat("mixValue", mixValue);
@@ -293,7 +304,6 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
-        ourShader.use();
         glBindVertexArray(VAO);
         // 6 faces * 2 triangles * 3 vertices = 36
 
@@ -302,11 +312,24 @@ int main()
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(i,0.0f,0.0f));
             model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
+            ourShader.use();
             ourShader.SetMat4("model", model);
 
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }
 
+        //drawing light source
+        glm::mat4 lightModel = glm::mat4(1.0f);
+        lightModel = glm::translate(lightModel, glm::vec3(0.0f, 0.0f, 2.0f));
+
+
+        lightShader.use();
+        lightShader.SetMat4("model", lightModel);
+        lightShader.SetMat4("view", view);
+        lightShader.SetMat4("proj", proj);
+
+        glBindVertexArray(lightVAO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         //glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
