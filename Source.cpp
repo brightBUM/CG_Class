@@ -6,7 +6,7 @@
 #include "Shader.h"
 #include <iostream>
 #include"Camera.h"
-
+#include "SphereData.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -225,16 +225,26 @@ int main()
     glEnableVertexAttribArray(2);
 
     //light
-    unsigned int lightVAO;
+    SphereData sphereData = GenerateSphere(1.0f, 36, 18);
+    unsigned int lightVAO,lightVBO,lightEBO;
     glGenVertexArrays(1,&lightVAO);
+    glGenBuffers(1, &lightVBO);
+    glGenBuffers(1, &lightEBO);
+
     glBindVertexArray(lightVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)*sphereData.vertices.size(), sphereData.vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* sphereData.indices.size(), sphereData.indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -244,15 +254,18 @@ int main()
 
     unsigned int texture1;
     unsigned int texture2;
+    unsigned int worldmapTexture;
     LoadTexture(texture1, "Textures/cat_open.png");
     LoadTexture(texture2, "Textures/cat_close.png");
+    LoadTexture(worldmapTexture, "Textures/8k_jupiter.jpg");
 
     ourShader.use();
     ourShader.setInt("texSampler1", 0);
     ourShader.use();
     ourShader.setInt("texSampler2", 1);
 
-
+    lightShader.use();
+    lightShader.setInt("texSampler1", 0);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
@@ -332,14 +345,18 @@ int main()
 
         glm::mat4 Lmodel = glm::mat4(1.0f);
         Lmodel = glm::translate(Lmodel, lightPos);
-        Lmodel = glm::scale(Lmodel, glm::vec3(0.2f));
+        //Lmodel = glm::scale(Lmodel, glm::vec3(0.2f));
         lightShader.use();
         lightShader.SetMat4("model", Lmodel);
         lightShader.SetMat4("view", view);
         lightShader.SetMat4("proj", proj);
         lightShader.SetVec3("lightColor", lightColor);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, worldmapTexture);
+
         glBindVertexArray(lightVAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, sphereData.indices.size(), GL_UNSIGNED_INT, 0);
 
         //glBindVertexArray(0);
 
