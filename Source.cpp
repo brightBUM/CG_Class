@@ -299,6 +299,7 @@ int main()
         ourShader.setFloat("mixValue", mixValue);
         ourShader.SetVec3("lightColor", lightColor);
         ourShader.SetVec3("lightPos", lightPos);
+        ourShader.SetVec3("camPos", camera.Position);
 
 
         // render the triangle
@@ -433,7 +434,11 @@ void processInput(GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
         lightPos += glm::vec3(1.0f, 0.0f, 0.0f) * camera.MovementSpeed * static_cast<float>(deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        lightPos += glm::vec3(0.0f, 0.0f, -1.0f) * camera.MovementSpeed * static_cast<float>(deltaTime);
 
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        lightPos += glm::vec3(0.0f, 0.0f, 1.0f) * camera.MovementSpeed * static_cast<float>(deltaTime);
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------

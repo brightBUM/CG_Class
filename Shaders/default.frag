@@ -11,17 +11,31 @@ uniform sampler2D texSampler2;
 uniform float mixValue;
 uniform vec3 lightColor;
 uniform vec3 lightPos;
-
+uniform vec3 camPos;
 void main()
 {
    vec4 texMix = mix(texture(texSampler1, TexCoord), texture(texSampler2, TexCoord), mixValue);
 
+   //ambient lighting
+   float ambientValue = 0.1f;
+   vec3 ambient = ambientValue*lightColor;
+
    //diffuse lighting
    vec3 A = normalize(Normal);
    vec3 B = normalize(lightPos-FragPos);
-   float dot = dot(A,B);
+   float dotValue = dot(A,B);
 
-   float diffuse = max(dot,0.0f);
-   vec4 result = vec4(diffuse*texMix.rgb,texMix.a);
-FragColor = result;
+   vec3 objectColor = vec3(1.0f);
+   float diffValue = max(dotValue,0.0f);
+   vec3 diffuse = diffValue*lightColor;
+
+   //specular lighting
+   vec3 ref = reflect(-B,Normal);
+   vec3 viewDir = normalize(camPos-FragPos);
+   float dotValue2 = dot(ref,viewDir);
+   float specValue = pow(max(dotValue2,0.0f),8.0f);
+   vec3 specular = specValue*lightColor;
+
+   vec4 result = vec4((diffuse+ambient+specular)*objectColor,1.0f);
+	FragColor = result;
 }
