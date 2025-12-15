@@ -8,6 +8,7 @@ uniform sampler2D texSampler2;
 uniform float mixValue;
 uniform vec3 lightColor;
 uniform vec3 lightPos;
+uniform vec3 camPos;
 in vec3 Normal;
 in vec3 FragPos;
 
@@ -25,7 +26,14 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    vec3 result = (ambient+diffuse) * FragColor.rgb;
 
-	FragColor = vec4(result,FragColor.a);
+    //specular
+    vec3 ref = reflect(-lightDir,norm);
+    vec3 camDir = normalize(camPos-FragPos);
+    float specValue = pow(max(dot(ref,camDir),0.0f),16.0f);
+    vec3 specular = specValue*lightColor;
+
+    vec3 objectColor = vec3(1.0);
+    vec3 result = (ambient+diffuse+specular) * objectColor.rgb;
+	FragColor = vec4(result,1.0f);
 }

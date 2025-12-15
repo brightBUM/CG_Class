@@ -14,6 +14,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void MousePosCallback(GLFWwindow* window, double xPos, double yPos);
 void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 void processInput(GLFWwindow* window);
 
@@ -39,7 +40,7 @@ float cameraSpeed = 0.5f;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-
+bool wireframe = false;
 
 float mixValue = 0.0f;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -74,6 +75,7 @@ int main()
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, MousePosCallback);
     glfwSetScrollCallback(window, MouseScrollCallback);
+    glfwSetKeyCallback(window, key_callback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -87,6 +89,7 @@ int main()
     // build and compile our shader program
     // ------------------------------------
     Shader ourShader("Shaders/default.vert", "Shaders/default.frag"); // you can name your shader files however you like
+    Shader gouraudShader("Shaders/gouraud.vert", "Shaders/gouraud.frag");
     Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -224,19 +227,32 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)( 6* sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    //light
-    SphereData sphereData = GenerateSphere(1.0f, 36, 18);
-    unsigned int lightVAO,lightVBO,lightEBO;
-    glGenVertexArrays(1,&lightVAO);
-    glGenBuffers(1, &lightVBO);
-    glGenBuffers(1, &lightEBO);
 
+    //light
+    unsigned int lightVAO;
+    glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+
+    //sphere
+    SphereData sphereData = GenerateSphere(1.0f, 18, 9);
+    unsigned int sphereVAO,sphereVBO,sphereEBO;
+    glGenVertexArrays(1,&sphereVAO);
+    glGenBuffers(1, &sphereVBO);
+    glGenBuffers(1, &sphereEBO);
+
+    glBindVertexArray(sphereVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, sphereVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float)*sphereData.vertices.size(), sphereData.vertices.data(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphereEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* sphereData.indices.size(), sphereData.indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -254,10 +270,10 @@ int main()
 
     unsigned int texture1;
     unsigned int texture2;
-    unsigned int worldmapTexture;
+    //unsigned int worldmapTexture;
     LoadTexture(texture1, "Textures/cat_open.png");
     LoadTexture(texture2, "Textures/cat_close.png");
-    LoadTexture(worldmapTexture, "Textures/8k_jupiter.jpg");
+    //LoadTexture(worldmapTexture, "Textures/8k_jupiter.jpg");
 
     ourShader.use();
     ourShader.setInt("texSampler1", 0);
@@ -267,7 +283,7 @@ int main()
     lightShader.use();
     lightShader.setInt("texSampler1", 0);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
     glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
 
     glEnable(GL_BLEND); //enable Blend
@@ -316,11 +332,36 @@ int main()
 
         ourShader.use();
 
+        //spher
+        glm::mat4 modelS = glm::mat4(1.0f);
+        modelS = glm::translate(modelS, glm::vec3(-1.5f, 0.0f, 0.0f));
+        modelS = glm::scale(modelS, glm::vec3(0.5f));
+        gouraudShader.use();
+        gouraudShader.SetMat4("model", modelS);
+        gouraudShader.SetMat4("view", view);
+        gouraudShader.SetMat4("proj", proj);
+        gouraudShader.SetVec3("lightColor", lightColor);
+        gouraudShader.SetVec3("lightPos", lightPos);
+        gouraudShader.SetVec3("camPos", camera.Position);
+        glBindVertexArray(sphereVAO);
+        glDrawElements(GL_TRIANGLES, sphereData.indices.size(), GL_UNSIGNED_INT, 0);
+
+        modelS = glm::mat4(1.0f);
+        modelS = glm::translate(modelS, glm::vec3(-3.0f, 0.0f, 0.0f));
+        modelS = glm::scale(modelS, glm::vec3(0.5f));
+        ourShader.use();
+        ourShader.SetMat4("model", modelS);
         ourShader.SetMat4("view", view);
         ourShader.SetMat4("proj", proj);
-        ourShader.setFloat("mixValue", mixValue);
         ourShader.SetVec3("lightColor", lightColor);
         ourShader.SetVec3("lightPos", lightPos);
+        ourShader.SetVec3("camPos", camera.Position);
+        glBindVertexArray(sphereVAO);
+        glDrawElements(GL_TRIANGLES, sphereData.indices.size(), GL_UNSIGNED_INT, 0);
+
+        //cube's other matrices
+       
+        ourShader.setFloat("mixValue", mixValue);
 
         // render the triangle
         
@@ -339,24 +380,20 @@ int main()
             model = glm::scale(model, glm::vec3(0.5-(0.1f*i),0.5f,0.5f));
             ourShader.use();
             ourShader.SetMat4("model", model);
-
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }
 
         glm::mat4 Lmodel = glm::mat4(1.0f);
         Lmodel = glm::translate(Lmodel, lightPos);
-        //Lmodel = glm::scale(Lmodel, glm::vec3(0.2f));
+        Lmodel = glm::scale(Lmodel, glm::vec3(0.2f));
         lightShader.use();
         lightShader.SetMat4("model", Lmodel);
         lightShader.SetMat4("view", view);
         lightShader.SetMat4("proj", proj);
         lightShader.SetVec3("lightColor", lightColor);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, worldmapTexture);
-
         glBindVertexArray(lightVAO);
-        glDrawElements(GL_TRIANGLES, sphereData.indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
         //glBindVertexArray(0);
 
@@ -464,6 +501,20 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
         lightPos += glm::vec3(1.0f, 0.0f, 0.0f) * camera.MovementSpeed * (float)deltaTime;
 
+    
+}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        wireframe = !wireframe;
+        glLineWidth(2.0f);
+        //glPointSize(5.0f);
+        if (wireframe)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------

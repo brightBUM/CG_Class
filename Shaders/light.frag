@@ -6,6 +6,6 @@ in vec2 TexCoord;
 void main()
 {
 	vec4 tex = texture(texSampler1,TexCoord);
-	FragColor = vec4(lightColor*tex.rgb,tex.a);
+	FragColor = vec4(1.0f);
 	
 }
