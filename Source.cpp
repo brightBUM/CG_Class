@@ -300,6 +300,7 @@ int main()
         ourShader.SetVec3("lightColor", lightColor);
         ourShader.SetVec3("lightPos", lightPos);
         ourShader.SetVec3("camPos", camera.Position);
+        
 
 
         // render the triangle
@@ -319,6 +320,9 @@ int main()
             model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
             ourShader.use();
             ourShader.SetMat4("model", model);
+            ourShader.setFloat("material.specular", 0.2f*(i+1));
+            ourShader.setFloat("material.shininess", 8.0f*(i+1));
+            ourShader.setFloat("material.ambient", 0.2f);
 
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }
