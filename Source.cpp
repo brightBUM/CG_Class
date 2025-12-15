@@ -254,6 +254,11 @@ int main()
     glEnable(GL_BLEND); //enable Blend
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glm::vec3 colors[] = {glm::vec3(1.0f,0.0f,0.0f),
+                            glm::vec3(1.0f,1.0f,0.0f),
+                            glm::vec3(0.0f,1.0f,0.0f) ,
+                            glm::vec3(0.2f,0.8f,0.1f)
+    };
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -323,6 +328,7 @@ int main()
             ourShader.setFloat("material.specular", 0.2f*(i+1));
             ourShader.setFloat("material.shininess", 8.0f*(i+1));
             ourShader.setFloat("material.ambient", 0.2f);
+            ourShader.SetVec3("material.objectColor", colors[(int)i]);
 
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }

@@ -15,6 +15,7 @@ uniform vec3 camPos;
 
 struct Material
 {
+	vec3 objectColor;
 	float ambient;
 	float specular;
 	float shininess;
@@ -32,7 +33,6 @@ void main()
    vec3 B = normalize(lightPos-FragPos);
    float dotValue = dot(A,B);
 
-   vec3 objectColor = vec3(0.5f,0.8f,0.2f);
    float diffValue = max(dotValue,0.0f);
    vec3 diffuse = diffValue*lightColor;
 
@@ -43,6 +43,6 @@ void main()
    float specValue = pow(max(dotValue2,0.0f),material.shininess);
    vec3 specular = specValue*material.specular*lightColor;
 
-   vec4 result = vec4((diffuse+ambient+specular)*objectColor,1.0f);
+   vec4 result = vec4((diffuse+ambient+specular)*material.objectColor,1.0f);
 	FragColor = result;
 }
