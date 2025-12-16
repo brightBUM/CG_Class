@@ -237,15 +237,15 @@ int main()
     glEnableVertexAttribArray(0);
 
 
-    unsigned int texture1;
-    unsigned int texture2;
-    LoadTexture(texture1, "Textures/cat_open.png");
-    LoadTexture(texture2, "Textures/cat_close.png");
+    unsigned int diffuse_map;
+    unsigned int specular_map;
+    LoadTexture(diffuse_map, "Textures/container2.png");
+    LoadTexture(specular_map, "Textures/container2_specular2.png");
 
     ourShader.use();
-    ourShader.setInt("texSampler1", 0);
+    ourShader.setInt("material.diffuse", 0);
     ourShader.use();
-    ourShader.setInt("texSampler2", 1);
+    ourShader.setInt("material.specular", 1);
 
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -311,9 +311,9 @@ int main()
         // render the triangle
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        glBindTexture(GL_TEXTURE_2D, diffuse_map);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        glBindTexture(GL_TEXTURE_2D, specular_map);
 
         glBindVertexArray(VAO);
         // 6 faces * 2 triangles * 3 vertices = 36
@@ -325,7 +325,7 @@ int main()
             model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
             ourShader.use();
             ourShader.SetMat4("model", model);
-            ourShader.setFloat("material.specular", 0.2f*(i+1));
+            //ourShader.setFloat("material.specular", 0.2f*(i+1));
             ourShader.setFloat("material.shininess", 8.0f*(i+1));
             ourShader.setFloat("material.ambient", 0.2f);
             ourShader.SetVec3("material.objectColor", colors[(int)i]);
