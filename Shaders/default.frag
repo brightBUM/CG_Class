@@ -31,9 +31,12 @@ void main()
    //ambient lighting
    vec3 ambient = material.ambient*texture(material.diffuse, TexCoord).rgb*lightColor;
 
-   //diffuse lighting
+   //normal map
    vec3 Normal = texture(material.normal,TexCoord).rgb;
-   Normal = normalize(Normal * 2.0 - 1.0);  
+   Normal = normalize(Normal * 2.0 - 1.0); 
+
+   //diffuse lighting
+    
    vec3 A = normalize(Normal);
    vec3 B = normalize(lightPos-FragPos);
    float dotValue = dot(A,B);
