@@ -22,8 +22,8 @@ void FPSCounter(GLFWwindow* window);
 void LoadTexture(unsigned int& texture, const char* path);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1500;
+const unsigned int SCR_HEIGHT = 800;
 
 //global variables
 double deltaTime = 0.0;
@@ -139,7 +139,7 @@ int main()
         1, 0, 4
     };
 
-    //cube - pos,uv
+    //cube - pos,normal,uv
     float cubeVertices2[] = {
         // ===== FRONT FACE (normal: 0, 0, 1) =====
     //    position              normal           uv
@@ -239,13 +239,17 @@ int main()
 
     unsigned int diffuse_map;
     unsigned int specular_map;
-    LoadTexture(diffuse_map, "Textures/container2.png");
-    LoadTexture(specular_map, "Textures/container2_specular2.png");
+    unsigned int normal_map;
+    LoadTexture(diffuse_map, "Textures/lapis_ore.png");
+    LoadTexture(specular_map, "Textures/lapis_ore_s.png");
+    LoadTexture(normal_map, "Textures/lapis_ore_n.png");
 
     ourShader.use();
     ourShader.setInt("material.diffuse", 0);
     ourShader.use();
     ourShader.setInt("material.specular", 1);
+    ourShader.use();
+    ourShader.setInt("material.normal", 2);
 
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -273,7 +277,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
         
-        glm::vec3 lightColor = glm::vec3(1.0f);
+        glm::vec3 lightColor = glm::vec3(0.8f);
         //transformation
         
         glm::mat4 view = glm::mat4(1.0f);
@@ -314,6 +318,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, diffuse_map);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, specular_map);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, normal_map);
 
         glBindVertexArray(VAO);
         // 6 faces * 2 triangles * 3 vertices = 36

@@ -19,6 +19,7 @@ struct Material
 	vec3 objectColor;
 	sampler2D diffuse;
 	sampler2D specular;
+	sampler2D normal;
 	float ambient;
 	float shininess;
 };
@@ -31,6 +32,8 @@ void main()
    vec3 ambient = material.ambient*texture(material.diffuse, TexCoord).rgb*lightColor;
 
    //diffuse lighting
+   vec3 Normal = texture(material.normal,TexCoord).rgb;
+   Normal = normalize(Normal * 2.0 - 1.0);  
    vec3 A = normalize(Normal);
    vec3 B = normalize(lightPos-FragPos);
    float dotValue = dot(A,B);
@@ -44,7 +47,7 @@ void main()
    vec3 viewDir = normalize(camPos-FragPos);
    float dotValue2 = dot(ref,viewDir);
    float specValue = pow(max(dotValue2,0.0f),material.shininess);
-   vec3 specular = specValue*texture(material.specular, TexCoord).rgb*lightColor;
+   vec3 specular = specValue*length(texture(material.specular, TexCoord).rgb)*lightColor;
 
    vec4 result = vec4((diffuse+ambient+specular)*objectColor,1.0f);
 //   vec4 result = vec4((diffuse+ambient+specular)*material.objectColor,1.0f);
