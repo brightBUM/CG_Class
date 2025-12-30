@@ -24,8 +24,15 @@ void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
 glm::vec2 Lerp(glm::vec2 ptA, glm::vec2 ptB, float t);
-vec2 RecursiveLerp(vector<vec2> points, float t);
+vec2 RecursiveLerp(const vector<vec2>& points, float t);
 
+std::vector<vec2> points = {
+    glm::vec2(0.7f, -0.5f),
+    glm::vec2(0.2f, 0.7f),
+    glm::vec2(-0.2f, 0.7f),
+    glm::vec2(-0.7f, -0.5f)
+    //glm::vec2(0.5f,0.8f)
+};
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -50,6 +57,8 @@ bool firstMouse = true;
 float mixValue = 0.0f;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 2.0f);
+
+bool mouseClick = false;
 int main()
 {
     // glfw: initialize and configure
@@ -76,7 +85,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, MouseButtonCallback);
     glfwSetCursorPosCallback(window, MousePosCallback);
-    glfwSetScrollCallback(window, MouseScrollCallback);
+    //glfwSetScrollCallback(window, MouseScrollCallback);
     //glfwSwapInterval(0); // disable vsync
 
     // glad: load all OpenGL function pointers
@@ -99,15 +108,11 @@ int main()
                             glm::vec3(0.0f,1.0f,0.0f) ,
                             glm::vec3(0.5f,0.8f,0.5f)
     };
-    std::vector<vec2> points = {
-    glm::vec2(0.7f, -0.5f),
-    glm::vec2(0.0f, 0.7f),
-    glm::vec2(-0.7f, -0.5f)
-    //glm::vec2(0.5f,0.8f)
-    };
+    
 
     std::vector<vec2> curvePoints;
-    for (int i = 0; i < 10; i++)
+    int samplePoints = 15;
+    for (int i = 0; i < samplePoints; i++)
     {
         curvePoints.push_back(glm::vec2(0.0f, 0.0f));
     }
@@ -135,35 +140,29 @@ int main()
         }
         glEnd();
 
-        glLineWidth(5.0f);
-        glBegin(GL_LINE_STRIP);
-        glColor3f(1.0f, 0.5f, 0.0f);
-        for (int i = 0; i < points.size(); i++)
-        {
-            glVertex2f(points[i].x, points[i].y);
-        }
-        // Stop defining the triangle
-        glEnd();
-        float t = 0.1f;
+        
 
         glPointSize(10.0f);
 
         glBegin(GL_POINTS);
         glColor3f(0.0f, 1.0f, 0.5f);
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < samplePoints; i++)
         {
+            float t = (float)i / (float)(samplePoints - 1);
             curvePoints[i] = RecursiveLerp(points, t);
             glVertex2f(curvePoints[i].x, curvePoints[i].y);
-            t += 0.1f;
         }
         glEnd();
 
-        for (int i = 0; i < 10; i++)
+        glLineWidth(5.0f);
+        glBegin(GL_LINE_STRIP);
+        glColor3f(1.0f, 0.5f, 0.0f);
+        for (int i = 0; i < curvePoints.size(); i++)
         {
-            std::cout << curvePoints[i].x << " , " << curvePoints[i].y << std::endl;
-
+            glVertex2f(curvePoints[i].x, curvePoints[i].y);
         }
-        std::cout << endl;
+        // Stop defining the triangle
+        glEnd();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -181,7 +180,7 @@ glm::vec2 Lerp(glm::vec2 ptA, glm::vec2 ptB, float t)
     return (1 - t) * ptA + t * ptB;
 }
 
-vec2 RecursiveLerp(vector<vec2> points, float t)
+vec2 RecursiveLerp(const vector<vec2>& points, float t)
 {
     if (points.size() == 1)
         return points[0];
@@ -264,35 +263,57 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     std::cout << "size : " << width << " , " << height << std::endl;
 }
+static int draggedIndex = -1;
+static float pickRadius = 0.08f; // tune
+
+static glm::vec2 CursorToNDC(GLFWwindow* window, double xPos, double yPos)
+{
+    int fbW, fbH;
+    glfwGetFramebufferSize(window, &fbW, &fbH);
+
+    float x = (float)((xPos / (double)fbW) * 2.0 - 1.0);
+    float y = (float)(1.0 - (yPos / (double)fbH) * 2.0); // flip Y
+    return { x, y };
+}
+
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        mixValue = 1.0f;
+    if (button != GLFW_MOUSE_BUTTON_LEFT) return;
 
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-        mixValue = 0.0f;
+    if (action == GLFW_PRESS)
+    {
+        mouseClick = true;
 
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-        std::cout << "Right mouse pressed\n";
+        // pick once
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        glm::vec2 m = CursorToNDC(window, mx, my);
+
+        draggedIndex = -1;
+        float best = pickRadius; // only accept within radius
+        for (int i = 0; i < (int)points.size(); i++)
+        {
+            float d = glm::distance(points[i], m);
+            if (d < best)
+            {
+                best = d;
+                draggedIndex = i;
+            }
+        }
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        mouseClick = false;
+        draggedIndex = -1;
+    }
 }
+
 void MousePosCallback(GLFWwindow* window, double xPos, double yPos)
 {
-    float xpos = static_cast<float>(xPos);
-    float ypos = static_cast<float>(yPos);
+    if (!mouseClick || draggedIndex < 0) return;
 
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    glm::vec2 m = CursorToNDC(window, xPos, yPos);
+    points[draggedIndex] = m;
 }
 void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos)
 {
