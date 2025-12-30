@@ -6,9 +6,14 @@
 #include "Shader.h"
 #include <iostream>
 #include"Camera.h"
+#include<vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+using namespace std;
+using namespace glm;
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
@@ -19,11 +24,10 @@ void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
 
-void LoadTexture(unsigned int& texture, const char* path);
 
 // settings
-const unsigned int SCR_WIDTH = 1500;
-const unsigned int SCR_HEIGHT = 800;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 //global variables
 double deltaTime = 0.0;
@@ -49,9 +53,9 @@ int main()
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -81,188 +85,20 @@ int main()
         return -1;
     }
 
-    // build and compile our shader program
-    // ------------------------------------
-    Shader ourShader("Shaders/default.vert", "Shaders/default.frag"); // you can name your shader files however you like
-    Shader lightShader("Shaders/light.vert", "Shaders/light.frag");
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    
-    //triangle - pos,col,uv
-    float vertices[] = {
-        // positions         // colors         //Tex Coords            
-        -0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f,1.0f, // top left - 0
-         0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,1.0f,  // top right - 1
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f,0.0f,  // bottom right - 2
-        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f,0.0f  // bottom left -3
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-    };
-    //cube - pos , col
-    float cubeVertices[] = {
-        // position           // color
-        -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,   // 0
-         0.5f,-0.5f,-0.5f,    0.0f,1.0f,0.0f,   // 1
-         0.5f, 0.5f,-0.5f,    0.0f,0.0f,1.0f,   // 2
-        -0.5f, 0.5f,-0.5f,    1.0f,1.0f,0.0f,   // 3
-
-        -0.5f,-0.5f, 0.5f,    1.0f,0.0f,1.0f,   // 4
-         0.5f,-0.5f, 0.5f,    0.0f,1.0f,1.0f,   // 5
-         0.5f, 0.5f, 0.5f,    1.0f,1.0f,1.0f,   // 6
-        -0.5f, 0.5f, 0.5f,    0.3f,0.3f,0.3f    // 7
-    };
-    unsigned int cubeIndices[] = {
-        // Front face
-        0, 1, 2,
-        2, 3, 0,
-
-        // Right face
-        1, 5, 6,
-        6, 2, 1,
-
-        // Back face
-        5, 4, 7,
-        7, 6, 5,
-
-        // Left face
-        4, 0, 3,
-        3, 7, 4,
-
-        // Top face
-        3, 2, 6,
-        6, 7, 3,
-
-        // Bottom face
-        4, 5, 1,
-        1, 0, 4
-    };
-
-    //cube - pos,normal,uv
-    float cubeVertices2[] = {
-        // ===== FRONT FACE (normal: 0, 0, 1) =====
-    //    position              normal           uv
-    -0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-
-    // ===== BACK FACE (normal: 0, 0, -1) =====
-    -0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   0.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,    0.0f, 0.0f, -1.0f,   1.0f, 1.0f,
-
-    // ===== LEFT FACE (normal: -1, 0, 0) =====
-    -0.5f, -0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,    -1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,    -1.0f, 0.0f, 0.0f,   0.0f, 1.0f,
-
-    // ===== RIGHT FACE (normal: 1, 0, 0) =====
-     0.5f, -0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
-
-     // ===== TOP FACE (normal: 0, 1, 0) =====
-     -0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
-      0.5f,  0.5f,  0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-      0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
-     -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
-
-     // ===== BOTTOM FACE (normal: 0, -1, 0) =====
-     -0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 0.0f,
-      0.5f, -0.5f,  0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 0.0f,
-      0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-     -0.5f, -0.5f, -0.5f,    0.0f, -1.0f, 0.0f,   0.0f, 1.0f
-    };
-    unsigned int cubeIndices2[] = {
-        // FRONT
-        0, 1, 2,  2, 3, 0,
-
-        // BACK
-        4, 5, 6,  6, 7, 4,
-
-        // LEFT
-        8, 9, 10, 10, 11, 8,
-
-        // RIGHT
-        12, 13, 14, 14, 15, 12,
-
-        // TOP
-        16, 17, 18, 18, 19, 16,
-
-        // BOTTOM
-        20, 21, 22, 22, 23, 20
-    };
-
-
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices2), cubeVertices2, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices2), cubeIndices2, GL_STATIC_DRAW);
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // TexCoord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
-
-    //create a light source //another cube
-    unsigned int lightVAO;
-    glGenVertexArrays(1, &lightVAO);
-    glBindVertexArray(lightVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-
-    unsigned int diffuse_map;
-    unsigned int specular_map;
-    unsigned int normal_map;
-    LoadTexture(diffuse_map, "Textures/lapis_ore.png");
-    LoadTexture(specular_map, "Textures/lapis_ore_s.png");
-    LoadTexture(normal_map, "Textures/lapis_ore_n.png");
-
-    ourShader.use();
-    ourShader.setInt("material.diffuse", 0);
-    ourShader.use();
-    ourShader.setInt("material.specular", 1);
-    ourShader.use();
-    ourShader.setInt("material.normal", 2);
-
-
+   
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
+    //glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
 
-    glEnable(GL_BLEND); //enable Blend
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_BLEND); //enable Blend
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glm::vec3 colors[] = {glm::vec3(1.0f,0.0f,0.0f),
                             glm::vec3(1.0f,1.0f,0.0f),
                             glm::vec3(0.0f,1.0f,0.0f) ,
                             glm::vec3(0.5f,0.8f,0.5f)
     };
+    
+
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -275,84 +111,30 @@ int main()
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color and depth buffer
+        glClear(GL_COLOR_BUFFER_BIT); // clear color and depth buffer
         
-        glm::vec3 lightColor = glm::vec3(0.8f);
-        //transformation
-        
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 proj = glm::mat4(1.0f);
-
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        view = glm::translate(view, camPos);
-
-        //camera rotation
-        glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 3.0f);
-        glm::vec3 camFront = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 direction = glm::vec3(5.0f, 0.0f, 0.0f) - camPos;
-        glm::vec3 camUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-        //look at - pos,target direction and up vector
-        view = camera.GetViewMatrix();
+        //glPointSize(10.0f);
         
 
-        //proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.1f, 100.0f);
-        proj = glm::perspective(glm::radians(camera.Zoom), 
-            (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glLineWidth(10.0f);
+        glBegin(GL_LINE_STRIP);
+        // Define the first vertex (e.g., red, bottom-left)
+        glColor3f(1.0f, 0.0f, 0.0f); // Red
+        glVertex2f(-0.7f, -0.5f);
 
-        ourShader.use();
-        ourShader.SetMat4("view", view);
-        ourShader.SetMat4("proj", proj);
-        ourShader.setFloat("mixValue", mixValue);
-        ourShader.SetVec3("lightColor", lightColor);
-        ourShader.SetVec3("lightPos", lightPos);
-        ourShader.SetVec3("camPos", camera.Position);
-        
+        // Define the second vertex (e.g., green, bottom-right)
+        glColor3f(0.0f, 1.0f, 0.0f); // Green
+        glVertex2f(0.7f, -0.5f);
 
+        // Define the third vertex (e.g., blue, top-center)
+        glColor3f(0.0f, 0.0f, 1.0f); // Blue
+        glVertex2f(0.0f, 0.7f);
 
-        // render the triangle
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuse_map);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, specular_map);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, normal_map);
-
-        glBindVertexArray(VAO);
-        // 6 faces * 2 triangles * 3 vertices = 36
-
-        for (float i = 0.0f; i <= 3.0f; i+=1.0f)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(i,0.0f,0.0f));
-            model = glm::scale(model, glm::vec3(0.5, 0.5f, 0.5f));
-            ourShader.use();
-            ourShader.SetMat4("model", model);
-            //ourShader.setFloat("material.specular", 0.2f*(i+1));
-            ourShader.setFloat("material.shininess", 8.0f*(i+1));
-            ourShader.setFloat("material.ambient", 0.2f);
-            ourShader.SetVec3("material.objectColor", colors[(int)i]);
-
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        }
-
-        //drawing light source
-        glm::mat4 lightModel = glm::mat4(1.0f);
-        lightModel = glm::translate(lightModel, lightPos);
-        lightModel = glm::scale(lightModel, glm::vec3(0.1f));
+        // Stop defining the triangle
+        glEnd();
 
 
-        lightShader.use();
-        lightShader.SetMat4("model", lightModel);
-        lightShader.SetMat4("view", view);
-        lightShader.SetMat4("proj", proj);
-        lightShader.SetVec3("lightColor", lightColor);
-
-        glBindVertexArray(lightVAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         //glBindVertexArray(0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -361,42 +143,11 @@ int main()
         glfwPollEvents();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
+    
     glfwTerminate();
     return 0;
 }
 
-void LoadTexture(unsigned int& texture,const char* path)
-{
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    stbi_set_flip_vertically_on_load(true);
-    // set the texture wrapping/filtering options (on the currently bound texture object)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load and generate the texture
-    int width, height, nrChannels;
-    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, STBI_rgb_alpha);
-    if (data)
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else
-    {
-        std::cout << "Failed to load texture : "<<path << std::endl;
-    }
-
-    stbi_image_free(data);
-}
 
 void FPSCounter(GLFWwindow* window)
 {
