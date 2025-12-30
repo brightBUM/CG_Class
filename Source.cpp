@@ -23,6 +23,8 @@ void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos);
 void processInput(GLFWwindow* window);
 
 void FPSCounter(GLFWwindow* window);
+glm::vec2 Lerp(glm::vec2 ptA, glm::vec2 ptB, float t);
+vec2 RecursiveLerp(vector<vec2> points, float t);
 
 
 // settings
@@ -38,7 +40,7 @@ double fpsTimer = 0.0;
 double fpsUpdateInterval = 0.5; // half a second
 int frames = 0;
 
-glm::vec3 camPos = glm::vec3(0.0f,0.0f,-1.5f);
+glm::vec3 camPos = glm::vec3(0.0f, 0.0f, -1.5f);
 float cameraSpeed = 0.5f;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
@@ -85,20 +87,30 @@ int main()
         return -1;
     }
 
-   
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     //glEnable(GL_DEPTH_TEST); // ENABLE DEPTH BUFFER
 
     //glEnable(GL_BLEND); //enable Blend
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::vec3 colors[] = {glm::vec3(1.0f,0.0f,0.0f),
+    glm::vec3 colors[] = { glm::vec3(1.0f,0.0f,0.0f),
                             glm::vec3(1.0f,1.0f,0.0f),
                             glm::vec3(0.0f,1.0f,0.0f) ,
                             glm::vec3(0.5f,0.8f,0.5f)
     };
-    
+    std::vector<vec2> points = {
+    glm::vec2(0.7f, -0.5f),
+    glm::vec2(0.0f, 0.7f),
+    glm::vec2(-0.7f, -0.5f)
+    //glm::vec2(0.5f,0.8f)
+    };
 
+    std::vector<vec2> curvePoints;
+    for (int i = 0; i < 10; i++)
+    {
+        curvePoints.push_back(glm::vec2(0.0f, 0.0f));
+    }
     // render loop 
     // -----------
     while (!glfwWindowShouldClose(window))
@@ -112,30 +124,46 @@ int main()
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT); // clear color and depth buffer
-        
-        //glPointSize(10.0f);
-        
 
-        glLineWidth(10.0f);
-        glBegin(GL_LINE_STRIP);
-        // Define the first vertex (e.g., red, bottom-left)
-        glColor3f(1.0f, 0.0f, 0.0f); // Red
-        glVertex2f(-0.7f, -0.5f);
+        glPointSize(10.0f);
 
-        // Define the second vertex (e.g., green, bottom-right)
-        glColor3f(0.0f, 1.0f, 0.0f); // Green
-        glVertex2f(0.7f, -0.5f);
-
-        // Define the third vertex (e.g., blue, top-center)
-        glColor3f(0.0f, 0.0f, 1.0f); // Blue
-        glVertex2f(0.0f, 0.7f);
-
-        // Stop defining the triangle
+        glBegin(GL_POINTS);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        for (int i = 0; i < points.size(); i++)
+        {
+            glVertex2f(points[i].x, points[i].y);
+        }
         glEnd();
 
+        glLineWidth(5.0f);
+        glBegin(GL_LINE_STRIP);
+        glColor3f(1.0f, 0.5f, 0.0f);
+        for (int i = 0; i < points.size(); i++)
+        {
+            glVertex2f(points[i].x, points[i].y);
+        }
+        // Stop defining the triangle
+        glEnd();
+        float t = 0.1f;
 
-        //glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        //glBindVertexArray(0);
+        glPointSize(10.0f);
+
+        glBegin(GL_POINTS);
+        glColor3f(0.0f, 1.0f, 0.5f);
+        for (int i = 0; i < 9; i++)
+        {
+            curvePoints[i] = RecursiveLerp(points, t);
+            glVertex2f(curvePoints[i].x, curvePoints[i].y);
+            t += 0.1f;
+        }
+        glEnd();
+
+        for (int i = 0; i < 10; i++)
+        {
+            std::cout << curvePoints[i].x << " , " << curvePoints[i].y << std::endl;
+
+        }
+        std::cout << endl;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -143,12 +171,32 @@ int main()
         glfwPollEvents();
     }
 
-    
+
     glfwTerminate();
     return 0;
 }
 
+glm::vec2 Lerp(glm::vec2 ptA, glm::vec2 ptB, float t)
+{
+    return (1 - t) * ptA + t * ptB;
+}
 
+vec2 RecursiveLerp(vector<vec2> points, float t)
+{
+    if (points.size() == 1)
+        return points[0];
+
+    vector<vec2> lerpPoints;
+
+    for (int i = 0; i < points.size() - 1; i++)
+    {
+        auto point = Lerp(points[i], points[i + 1], t);
+        lerpPoints.push_back(point);
+    }
+    
+    return RecursiveLerp(lerpPoints, t);
+
+}
 void FPSCounter(GLFWwindow* window)
 {
     // --- DELTA TIME ---
@@ -183,7 +231,7 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS )
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
