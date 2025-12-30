@@ -19,6 +19,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void MousePosCallback(GLFWwindow* window, double xPos, double yPos);
 void MouseScrollCallback(GLFWwindow* window, double xPos, double yPos);
+static glm::vec2 CursorToNDC(GLFWwindow* window, double xPos, double yPos);
 
 void processInput(GLFWwindow* window);
 
@@ -35,8 +36,8 @@ std::vector<vec2> points = {
 };
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1500;
+const unsigned int SCR_HEIGHT = 800;
 
 //global variables
 double deltaTime = 0.0;
@@ -111,7 +112,10 @@ int main()
     
 
     std::vector<vec2> curvePoints;
-    int samplePoints = 15;
+    int samplePoints = 12;
+    float offset = 0.1f;
+    int lineSize = 50;
+    float moveSpeed = 8.0f;
     for (int i = 0; i < samplePoints; i++)
     {
         curvePoints.push_back(glm::vec2(0.0f, 0.0f));
@@ -130,7 +134,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT); // clear color and depth buffer
 
-        glPointSize(10.0f);
+        /*glPointSize(10.0f);
 
         glBegin(GL_POINTS);
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -138,7 +142,7 @@ int main()
         {
             glVertex2f(points[i].x, points[i].y);
         }
-        glEnd();
+        glEnd();*/
 
         
 
@@ -146,10 +150,19 @@ int main()
 
         glBegin(GL_POINTS);
         glColor3f(0.0f, 1.0f, 0.5f);
-        for (int i = 0; i < samplePoints; i++)
+
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        //curvePoints[0] = Lerp(curvePoints[0], CursorToNDC(window, mx, my),deltaTime*moveSpeed);
+        curvePoints[0] = CursorToNDC(window, mx, my);
+
+        for (int i = 1; i < samplePoints; i++)
         {
-            float t = (float)i / (float)(samplePoints - 1);
-            curvePoints[i] = RecursiveLerp(points, t);
+            vec2 dir = curvePoints[i - 1] - curvePoints[i];
+            vec2 target = curvePoints[i - 1] + (-glm::normalize(dir) * offset);
+            //curvePoints[i] = Lerp(curvePoints[i],target, deltaTime * moveSpeed);
+            curvePoints[i] = target;
+
             glVertex2f(curvePoints[i].x, curvePoints[i].y);
         }
         glEnd();
@@ -161,6 +174,8 @@ int main()
         {
             glVertex2f(curvePoints[i].x, curvePoints[i].y);
         }
+
+
         // Stop defining the triangle
         glEnd();
 
